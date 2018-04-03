@@ -4,82 +4,90 @@ import os
 import string
 from PIL import Image, ImageFont, ImageDraw
 import matplotlib.pyplot as mpl
-    
-def GenBlock(MINC, MAXC, s = (100, 100), o = (0, 0)):
-    '''
+
+
+def generate_block(min_char, max_char, size=(100, 100), origin=(0, 0)):
+    """
     Generates a single image block. This is the image size the CNN uses
-    '''
-    Si = ''.join(choice(CS, randint(MINC, MAXC)))
-    img = Image.new('RGB', s, "black")
+    returns image as a numpy array and string used to generate image
+
+    """
+    string_to_write = ''.join(choice(CHARSTRING, randint(min_char, max_char)))
+    img = Image.new('RGB', size, "black")
     draw = ImageDraw.Draw(img)
-    draw.text(o, Si, (255, 255, 255), font = TF)
-    return np.array(img), Si
-        
-def GenImage(NR, NC, IS, MINC = 10, MAXC = 64, NIMG = 128, DP = 'Trn'):
-    '''
-    NR:   Number of rows (blocks)
-    NC:   Number of columns (blocks)
-    IS:   Image size
-    MINC: Minimum number of characters per line
-    MAXC: Maximum number of characters per line
-    NIMG: Number of images to generate
-    DP:   Directory path to write images
-    '''
-    Y = []
-    MS = GetFontSize(MAXC)
-    NB = NR * NC #Number of blocks total = Rows * Cols
-    for i in range(NIMG):               #Write images to ./Out/ directory
-        Im, Ym = MergeBlock(NR, NC, [GenBlock(MINC, MAXC, IS) for _ in range(NB)])
-        FNi = os.path.join(DP, '{:05d}.png'.format(i))
-        mpl.imsave(FNi, Im)
-        Y.append(FNi + ',' + Ym)
-    with open(DP + '.csv', 'w') as F:   #Write CSV file
-        F.write('\n'.join(Y))
-   
-def GetFontSize(MAXC):
-    '''
-    Gets the maximum size of an image containing characters in CS
-    of maximum length MAXC
-    '''
+    draw.text(origin, string_to_write, (255, 255, 255), font=loaded_font)
+    return np.array(img), string_to_write
+
+
+def generate_image(num_rows, num_cols, image_size, nb_min_char, nb_max_char, nb_images=128, dir_path='Training'):
+    """
+    num_rows:   Number of rows (blocks)
+    num_cols:   Number of columns (blocks)
+    image_size:   Image size
+    nb_min_char: Minimum number of characters per line
+    nb_max_char: Maximum number of characters per line
+    nb_images: Number of images to generate
+    dir_path:   Directory path to write images
+    outputs are: images with the strings and csv file with the strings used to generate images
+    """
+    string_to_write = []
+    nb_blocks = num_rows * num_cols # Number of blocks total = Rows * Cols
+    for i in range(nb_images):               # Write images to ./Out/ directory
+        image_to_write, string_i = merge_blocks(num_rows, num_cols, [generate_block(nb_min_char, nb_max_char, image_size) for _ in range(nb_blocks)])
+        filename_i = os.path.join(dir_path, '{:05d}.png'.format(i))
+        mpl.imsave(filename_i, image_to_write)
+        string_to_write.append(filename_i + '/t' + string_i)
+    with open(dir_path + '.csv', 'w') as csvfile:   # Write CSV file
+        csvfile.write('\n'.join(string_to_write))
+
+
+def get_font_size(nb_max_char):
+    """
+    Gets the maximum size of an image containing characters in loaded_font
+    of maximum length nb_max_char
+    return max image size (height , width) in pixels
+    """
     img = Image.new('RGB', (1, 1), "black")
     draw = ImageDraw.Draw(img)
-    h, w = 0, 0
-    for CSi in CS:  #Get max height and width possible characters CS
-        tsi = draw.textsize(CSi * MAXC, font = TF) 
-        h = max(tsi[0], h)
-        w = max(tsi[1], w)
-    return (h, w)   
-    
-def MergeBlock(NR, NC, T):
-    '''
-    Merges blocks into combined images that are NR blocks tall and NC blocks wide
-    NR:  Number of rows (blocks)
-    NC:  Number of columns (blocks)
-    T:   List of outputs from GenBlock
+    im_height, im_width = 0, 0
+    for char in CHARSTRING:  # Get max height and width possible characters
+        tsi = draw.textsize(char * nb_max_char, font=loaded_font)
+        im_width = max(tsi[1], im_width)
+        im_height = max(tsi[0], im_height)
+    return im_height, im_width
+
+
+def merge_blocks(nb_rows, nb_cols, blocks_to_merge):
+    """
+    Merges blocks into combined images that are nb_rows blocks tall and nb_cols blocks wide
+    nb_rows:  Number of rows (blocks)
+    nb_cols:  Number of columns (blocks)
+    T:   List of outputs from generate_block
     ret: Merged image, Merged string
-    '''
-    B = np.array([t[0] for t in T])
-    Y = np.array([t[1] for t in T])
+    """
+    B = np.array([t[0] for t in blocks_to_merge])
+    Y = np.array([t[1] for t in blocks_to_merge])
     n, r, c, _ = B.shape
-    return Unblock(B, r * NR, c * NC), '@'.join(''.join(Yi) for Yi in Y.reshape(NR, NC))
-     
-def Unblock(I, h, w):
-    '''
-    I:   Array of shape (n, NR, NC, c)
-    h:   Height of new array
-    w:   Width of new array
-    ret: Array of shape (h, w, c)
-    '''
-    n, NR, NC, c = I.shape
-    return I.reshape(h // NR, -1, NR, NC, c).swapaxes(1, 2).reshape(h, w, c)
-       
-TF = ImageFont.truetype('consola.ttf', 18)
-#Possible characters to use
-CS = list(string.ascii_letters + string.digits + ' ')
+    return unblock(B, r * nb_rows, c * nb_cols), '@'.join(''.join(Yi) for Yi in Y.reshape(nb_rows, nb_cols))
+
+
+def unblock(im_array, new_height, new_width):
+    """
+    im_array:   Array of shape (n, num_rows, num_cols, c)
+    new_height:   Height of new array
+    new_width:   Width of new array
+    ret: Array of shape (new_height, new_width, c)
+    """
+    n, num_rows, num_cols, c = im_array.shape
+    return im_array.reshape(new_height // num_rows, -1, num_rows, num_cols, c).swapaxes(1, 2).reshape(new_height, new_width, c)
+
 
 if __name__ == "__main__":
-    nc, xc = 10, 64
-    ms = GetFontSize(xc)
-    print('CNN Image Size: ' + str(ms))
-    GenImage(1, 1, ms, nc, xc, NIMG = 32768, DP = 'Trn') #Training data
-    GenImage(4, 2, ms, nc, xc, NIMG = 256,   DP = 'Tst') #Testing data
+    loaded_font = ImageFont.truetype('Arial.ttf', 18)
+    # Possible characters to use
+    CHARSTRING = list(string.ascii_letters + string.digits + ' ' + string.punctuation)
+    nb_min_char, nb_max_char = 50, 64
+    im_max_size = get_font_size(nb_max_char)
+    print('CNN Image Size: ' + str(im_max_size))
+    generate_image(1, 1, im_max_size, nb_min_char, nb_min_char, nb_images=32768, dir_path='../Training')  # Training data
+    generate_image(4, 2, im_max_size, nb_min_char, nb_max_char, nb_images=256, dir_path='../Validation')  # Testing data
