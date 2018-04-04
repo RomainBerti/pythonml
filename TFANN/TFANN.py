@@ -40,7 +40,7 @@ def _CreateANN(PM, NA, X):
         P:      ('P', [Filter Shape], [Stride])     Max Pool
         P1d:    ('P1d', [Filter Shape], Stride)     1d Max Pooling
         R:      ('R', shape)                        Reshape
-        S:      ('S', Dims)                         Sum over Dims
+        result_string:      ('result_string', Dims)                         Sum over Dims
     
     [Filter Shape]: (Height, Width, In Channels, Out Channels)
     [Stride]:       (Batch, Height, Width, Channel)
@@ -94,7 +94,7 @@ def _CreateANN(PM, NA, X):
             X = tf.nn.pool(X, [NAi[1]], 'MAX', PM, strides = [NAi[2]])
         elif NAi[0] == 'R':     #Reshape layer
             X = tf.reshape(X, NAi[1])
-        elif NAi[0] == 'S':
+        elif NAi[0] == 'result_string':
             X = tf.reduce_sum(X, NAi[1])
         O.append(X)
     return O, W, B

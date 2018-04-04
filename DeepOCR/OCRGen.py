@@ -19,7 +19,7 @@ def generate_block(min_char, max_char, size=(100, 100), origin=(0, 0)):
     return np.array(img), string_to_write
 
 
-def generate_image(num_rows, num_cols, image_size, nb_min_char, nb_max_char, nb_images=128, dir_path='Training'):
+def generate_image(num_rows, num_cols, image_size, nb_min_char, nb_max_char, nb_images=128, dir_path='../Training'):
     """
     num_rows:   Number of rows (blocks)
     num_cols:   Number of columns (blocks)
@@ -31,12 +31,14 @@ def generate_image(num_rows, num_cols, image_size, nb_min_char, nb_max_char, nb_
     outputs are: images with the strings and csv file with the strings used to generate images
     """
     string_to_write = []
-    nb_blocks = num_rows * num_cols # Number of blocks total = Rows * Cols
+    nb_blocks = num_rows * num_cols  # Number of blocks total = Rows * Cols
     for i in range(nb_images):               # Write images to ./Out/ directory
-        image_to_write, string_i = merge_blocks(num_rows, num_cols, [generate_block(nb_min_char, nb_max_char, image_size) for _ in range(nb_blocks)])
+        image_to_write, string_i = merge_blocks(num_rows, num_cols,
+                                                [generate_block(nb_min_char, nb_max_char, image_size)
+                                                 for _ in range(nb_blocks)])
         filename_i = os.path.join(dir_path, '{:05d}.png'.format(i))
         mpl.imsave(filename_i, image_to_write)
-        string_to_write.append(filename_i + '/t' + string_i)
+        string_to_write.append(filename_i + ',' + string_i)
     with open(dir_path + '.csv', 'w') as csvfile:   # Write CSV file
         csvfile.write('\n'.join(string_to_write))
 
@@ -85,9 +87,9 @@ def unblock(im_array, new_height, new_width):
 if __name__ == "__main__":
     loaded_font = ImageFont.truetype('Arial.ttf', 18)
     # Possible characters to use
-    CHARSTRING = list(string.ascii_letters + string.digits + ' ' + string.punctuation)
+    CHARSTRING = list(string.ascii_letters + string.digits + ' ')  # + string.punctuation) might be added later
     nb_min_char, nb_max_char = 50, 64
     im_max_size = get_font_size(nb_max_char)
     print('CNN Image Size: ' + str(im_max_size))
-    generate_image(1, 1, im_max_size, nb_min_char, nb_min_char, nb_images=32768, dir_path='../Training')  # Training data
+    generate_image(1, 1, im_max_size, nb_min_char, nb_max_char, nb_images=32768, dir_path='../Training')  # Training data
     generate_image(4, 2, im_max_size, nb_min_char, nb_max_char, nb_images=256, dir_path='../Validation')  # Testing data

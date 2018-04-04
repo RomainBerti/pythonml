@@ -13,9 +13,9 @@ An implementation of OCR using TensorFlow. See [the related blog post](https://n
 ```python
 from skimage.io import imread
 #Takes a while to load model
-from DeepOCR import ImageToString
+from DeepOCR import image_to_string
 A = imread('Foo.png')
-S = ImageToString(A)
+S = image_to_string(A)
 print(S)
 ```
 
