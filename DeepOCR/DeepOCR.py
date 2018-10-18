@@ -34,7 +34,7 @@ def divide_into_sub_images(image):
     return image.reshape(H, IM_SIZE[0], -1, IM_SIZE[1], im_depth).swapaxes(1, 2).reshape(-1, IM_SIZE[0], IM_SIZE[1], im_depth)
 
 
-def make_network(net_name ='ocrnet'):
+def make_network(net_name='ocrnet'):
     # Architecture of the neural network
     # The input volume is reduce to the shape of the output in conv layers
     # 18 / 2 * 3 * 3 = 1 and 640 / 2 * 5 = 64 output.shape
@@ -52,6 +52,8 @@ def fit_model(cnnc, A, Y, T, FN):
     ss = ShuffleSplit(n_splits = 1)
     trn, tst = next(ss.split(A))
     # Fit the network
+    print(len(A[trn]))
+    print(len(Y[trn]))
     cnnc.fit(A[trn], Y[trn])
     # The predictions as sequences of character indices
     YH = []

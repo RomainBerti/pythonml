@@ -234,6 +234,7 @@ class ANN:
         A: numpy matrix where each row is a sample
         Y: numpy matrix of target values
         '''
+        print('toto')
         m = len(A)
         FD = {self.X:A, self.Y:Y} if FD is None else FD     #Feed dictionary
         #Loop up to mIter times gradually scaling up the batch size (if range is provided)
